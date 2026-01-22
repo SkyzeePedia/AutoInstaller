@@ -1,6 +1,7 @@
 #!/bin/bash
 clear
 
+# ================= COLOR =================
 BLUE='\033[0;34m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -9,38 +10,53 @@ NC='\033[0m'
 
 PANEL_DIR="/var/www/pterodactyl"
 
+# ================= WELCOME =================
 display_welcome() {
 echo -e "${BLUE}==============================================${NC}"
-echo -e "${BLUE}        AUTO INSTALLER THEME PTERODACTYL       ${NC}"
-echo -e "${BLUE}               © SKYZEE SHOP                ${NC}"
+echo -e "${BLUE}     AUTO INSTALLER THEME PTERODACTYL          ${NC}"
+echo -e "${BLUE}              © SKYZEE SHOP          ${NC}"
 echo -e "${BLUE}==============================================${NC}"
 sleep 2
 clear
 }
 
+# ================= INSTALL JQ =================
 install_jq() {
 echo -e "${YELLOW}[+] Installing jq...${NC}"
-apt update -y && apt install -y jq
+apt update -y
+apt install -y jq
 }
 
+# ================= INSTALL DEPEND =================
 install_depend() {
-echo -e "${BLUE}[+] INSTALL DEPENDENCY${NC}"
+echo -e "${BLUE}[+] INSTALL DEPENDENCY (NODEJS 20 LTS)${NC}"
 
 apt update -y
 apt install -y curl wget unzip git ca-certificates gnupg
 
-curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+# NodeJS 20 LTS (OFFICIAL)
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] \
+https://deb.nodesource.com/node_20.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list
+
+apt update -y
 apt install -y nodejs
-npm i -g yarn
+npm install -g yarn
 
 install_jq
 
 cd $PANEL_DIR || exit
-yarn
-echo -e "${GREEN}[✓] Dependency Installed${NC}"
+yarn install
+
+echo -e "${GREEN}[✓] Dependency NodeJS 20 LTS installed${NC}"
 sleep 2
 }
 
+# ================= INSTALL THEME =================
 install_theme() {
 clear
 echo -e "${BLUE}Pilih Theme:${NC}"
@@ -84,8 +100,10 @@ esac
 chmod -R 755 storage bootstrap/cache
 COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader
 php artisan migrate --force
+
 yarn install
 yarn build:production
+
 php artisan view:clear
 php artisan config:clear
 php artisan cache:clear
@@ -96,20 +114,22 @@ echo -e "${GREEN}[✓] Theme berhasil di install${NC}"
 sleep 3
 }
 
+# ================= UNINSTALL THEME =================
 uninstall_theme() {
 echo -e "${RED}[+] UNINSTALL ALL THEME${NC}"
 bash <(curl -s https://raw.githubusercontent.com/VallzHost/installer-theme/main/repair.sh)
-echo -e "${GREEN}[✓] Theme Berhasil Dihapus${NC}"
+echo -e "${GREEN}[✓] Theme berhasil dihapus (panel original)${NC}"
 sleep 3
 }
 
+# ================= MENU =================
 display_welcome
 while true; do
 clear
 echo -e "${BLUE}========== MENU ==========${NC}"
 echo "1. Install Theme"
 echo "2. Uninstall Theme"
-echo "3. Install Depend"
+echo "3. Install Depend (NodeJS 20 LTS)"
 echo "4. Exit"
 read -p "Pilih [1-4]: " MENU
 
